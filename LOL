@@ -1,0 +1,177 @@
+-- Services
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local localPlayer = Players.LocalPlayer
+local workspaceCamera = workspace.CurrentCamera
+
+-- Variables
+getgenv().Camlock = {
+    Enabled = false,
+    Prediction = 0.1,
+    Target = nil,
+    MouseTP = false
+}
+
+-- Function to check if the target is still valid
+local function isValidTarget(target)
+    return target and target.Parent and target:FindFirstChild("Humanoid") and target:FindFirstChild("Humanoid").Health > 0
+end
+
+-- Function to get the nearest valid target
+local function getNearestTarget()
+    local nearest, distance = nil, math.huge
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= localPlayer and player.Character and isValidTarget(player.Character) then
+            local magnitude = (workspaceCamera.CFrame.Position - player.Character.HumanoidRootPart.Position).Magnitude
+            if magnitude < distance then
+                nearest, distance = player.Character, magnitude
+            end
+        end
+    end
+    return nearest
+end
+
+-- Function to update the current target
+local function refreshTarget()
+    if getgenv().Camlock.Target and not isValidTarget(getgenv().Camlock.Target) then
+        getgenv().Camlock.Target = nil
+        getgenv().Camlock.Enabled = false
+    elseif not getgenv().Camlock.Target then
+        getgenv().Camlock.Target = getNearestTarget()
+    end
+end
+
+-- Startup Screen
+local StartupGui = Instance.new("ScreenGui")
+StartupGui.Name = "StartupGui"
+StartupGui.ResetOnSpawn = false
+StartupGui.Parent = game.CoreGui
+
+local StartupFrame = Instance.new("Frame")
+StartupFrame.Size = UDim2.new(1, 0, 1, 0)
+StartupFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+StartupFrame.BorderSizePixel = 0
+StartupFrame.Parent = StartupGui
+
+local StartupImage = Instance.new("ImageLabel")
+StartupImage.Size = UDim2.new(0, 300, 0, 300)
+StartupImage.Position = UDim2.new(0.5, -150, 0.3, -150)
+StartupImage.BackgroundTransparency = 1
+StartupImage.Image = "rbxassetid://74001667216159"
+StartupImage.Parent = StartupFrame
+
+local StartupSound = Instance.new("Sound")
+StartupSound.SoundId = "rbxassetid://6577321647"
+StartupSound.Volume = 1
+StartupSound.Looped = false
+StartupSound.Parent = StartupFrame
+
+-- Play the startup sequence
+StartupSound:Play()
+task.wait(3)
+StartupGui:Destroy()
+
+-- Main GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "ZernixGui"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = game.CoreGui
+
+-- Watermark
+local Watermark = Instance.new("TextLabel")
+Watermark.Size = UDim2.new(0, 200, 0, 30)
+Watermark.Position = UDim2.new(0.5, -100, 0, 10)
+Watermark.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Watermark.Text = "Zernix.cc | Buyer"
+Watermark.TextColor3 = Color3.fromRGB(255, 255, 255)
+Watermark.TextScaled = true
+Watermark.Font = Enum.Font.SourceSans
+Watermark.Parent = ScreenGui
+Watermark.Active = true
+Watermark.Draggable = true
+
+-- Main Frame
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 400, 0, 300)
+MainFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
+MainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+-- Title
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Title.Text = "Zernix.cc"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextScaled = true
+Title.Font = Enum.Font.SourceSans
+Title.Parent = MainFrame
+
+-- Combat Tab
+local CombatTab = Instance.new("Frame")
+CombatTab.Size = UDim2.new(1, 0, 1, 0)
+CombatTab.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+CombatTab.Parent = MainFrame
+
+local CamlockLabel = Instance.new("TextLabel")
+CamlockLabel.Size = UDim2.new(0, 200, 0, 30)
+CamlockLabel.Text = "Camlock Settings"
+CamlockLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+CamlockLabel.BackgroundTransparency = 1
+CamlockLabel.Parent = CombatTab
+
+local ToggleCamlockButton = Instance.new("TextButton")
+ToggleCamlockButton.Size = UDim2.new(0, 200, 0, 30)
+ToggleCamlockButton.Position = UDim2.new(0, 10, 0, 50)
+ToggleCamlockButton.Text = "Toggle Camlock"
+ToggleCamlockButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleCamlockButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+ToggleCamlockButton.Parent = CombatTab
+
+local ToggleMouseTPButton = Instance.new("TextButton")
+ToggleMouseTPButton.Size = UDim2.new(0, 200, 0, 30)
+ToggleMouseTPButton.Position = UDim2.new(0, 10, 0, 90)
+ToggleMouseTPButton.Text = "Toggle Mouse TP"
+ToggleMouseTPButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleMouseTPButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+ToggleMouseTPButton.Parent = CombatTab
+
+-- Button Functionality
+ToggleCamlockButton.MouseButton1Click:Connect(function()
+    getgenv().Camlock.Enabled = not getgenv().Camlock.Enabled
+    ToggleCamlockButton.Text = getgenv().Camlock.Enabled and "Camlock: ON" or "Camlock: OFF"
+    if getgenv().Camlock.Enabled then
+        getgenv().Camlock.Target = getNearestTarget()
+    else
+        getgenv().Camlock.Target = nil
+    end
+end)
+
+ToggleMouseTPButton.MouseButton1Click:Connect(function()
+    getgenv().Camlock.MouseTP = not getgenv().Camlock.MouseTP
+    ToggleMouseTPButton.Text = getgenv().Camlock.MouseTP and "Mouse TP: ON" or "Mouse TP: OFF"
+end)
+
+-- Refresh Target Every Second
+task.spawn(function()
+    while task.wait(1) do
+        if getgenv().Camlock.Enabled then
+            refreshTarget()
+        end
+    end
+end)
+
+-- Camlock Functionality
+RunService.RenderStepped:Connect(function()
+    if getgenv().Camlock.Enabled and getgenv().Camlock.Target and getgenv().Camlock.Target:FindFirstChild("HumanoidRootPart") then
+        local target = getgenv().Camlock.Target
+        workspaceCamera.CFrame = CFrame.new(workspaceCamera.CFrame.Position, target.HumanoidRootPart.Position + target.HumanoidRootPart.Velocity * getgenv().Camlock.Prediction)
+        if getgenv().Camlock.MouseTP and (workspaceCamera.CFrame.Position - target.HumanoidRootPart.Position).Magnitude > 50 then
+            localPlayer.Character.HumanoidRootPart.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 0, -10)
+        end
+    end
+end)
